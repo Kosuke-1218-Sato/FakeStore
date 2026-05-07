@@ -7,20 +7,29 @@ import {
   ActivityIndicator,
   Image,
   TouchableOpacity,
-  ScrollView
-} from "react-native"
+  ScrollView,
+} from "react-native";
+
 import { Ionicons } from "@expo/vector-icons";
 import { useDispatch } from "react-redux";
 import { addToCart } from "../store/cartSlice";
 
 export default function ProductDetailScreen() {
   const router = useRouter();
+
+  // Get product id and category from route parameters
   const { id, category } = useLocalSearchParams();
+
+  // Redux dispatch function for adding item to cart
   const dispatch = useDispatch();
 
+  // Store selected product detail
   const [product, setProduct] = useState<any>(null);
+
+  // Manage loading state while fetching product detail
   const [loading, setLoading] = useState(true);
 
+  // Fetch product detail when product id changes
   useEffect(() => {
     if (!id) return;
 
@@ -33,9 +42,10 @@ export default function ProductDetailScreen() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  // Show loading indicator while product detail is being fetched
   if (loading || !product) {
     return (
-      <View　style={styles.container}>
+      <View style={styles.container}>
         <ActivityIndicator size="large" />
       </View>
     );
@@ -43,36 +53,46 @@ export default function ProductDetailScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <TouchableOpacity style={styles.backButton}onPress={() =>
-  router.push({
-    pathname: "/product",
-    params: { category },
-  })
-}>
-  <Text style={styles.backText}>← Back</Text>
-</TouchableOpacity>
+      {/* Back to selected category product list */}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() =>
+          router.push({
+            pathname: "/product",
+            params: { category },
+          })
+        }
+      >
+        <Text style={styles.backText}>← Back</Text>
+      </TouchableOpacity>
+
+      {/* Product image */}
       <Image source={{ uri: product.image }} style={styles.image} />
 
+      {/* Product information */}
       <Text style={styles.title}>{product.title}</Text>
       <Text style={styles.price}>${product.price}</Text>
+
+      {/* Product description card */}
       <View style={styles.descriptionBox}>
-  <Text style={styles.description}>
-    {product.description}
-  </Text>
-</View>
+        <Text style={styles.description}>
+          {product.description}
+        </Text>
+      </View>
 
+      {/* Add product to Redux shopping cart */}
       <TouchableOpacity
-  style={styles.cartButton}
-  onPress={() => dispatch(addToCart(product))}
->
-  <View style={styles.cartButtonContent}>
-  <Ionicons name="cart" size={20} color="black" />
+        style={styles.cartButton}
+        onPress={() => dispatch(addToCart(product))}
+      >
+        <View style={styles.cartButtonContent}>
+          <Ionicons name="cart" size={20} color="black" />
 
-  <Text style={styles.cartButtonText}>
-    Add to Shopping Cart
-  </Text>
-</View>
-</TouchableOpacity>
+          <Text style={styles.cartButtonText}>
+            Add to Shopping Cart
+          </Text>
+        </View>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -114,11 +134,16 @@ const styles = StyleSheet.create({
     color: "#f12c2c",
     marginBottom: 12,
   },
+  descriptionBox: {
+    backgroundColor: "#ffffff",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 24,
+  },
   description: {
     fontSize: 14,
     color: "#333333",
     lineHeight: 20,
-    marginBottom: 24,
   },
   cartButton: {
     backgroundColor: "#81de9a",
@@ -126,20 +151,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
   },
+  cartButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   cartButtonText: {
-  color: "black",
-  fontSize: 16,
-  fontWeight: "bold",
-  marginLeft: 8,
-},
-  descriptionBox: {
-  backgroundColor: "#ffffff",
-  padding: 16,
-  borderRadius: 12,
-  marginBottom: 24,
-},
-cartButtonContent: {
-  flexDirection: "row",
-  alignItems: "center",
-}
+    color: "black",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginLeft: 8,
+  },
 });

@@ -9,10 +9,15 @@ import {
 } from "react-native";
 
 export default function CategoryScreen() {
+  // Store category data fetched from Fake Store API
   const [categories, setCategories] = useState<any[]>([]);
+
+  // Manage loading state while fetching data
   const [loading, setLoading] = useState(true);
+
   const router = useRouter();
 
+  // Fetch product categories when the screen loads
   useEffect(() => {
     fetch("https://fakestoreapi.com/products/categories")
       .then((res) => res.json())
@@ -21,6 +26,7 @@ export default function CategoryScreen() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Show loading indicator while data is being fetched
   if (loading) {
     return (
       <View style={styles.container}>
@@ -34,6 +40,7 @@ export default function CategoryScreen() {
       <Text style={styles.title}>Fake Store</Text>
       <Text style={styles.subtitle}>Choose a category</Text>
 
+      {/* Display category buttons */}
       {categories.map((item, index) => (
         <TouchableOpacity
           key={index}
@@ -61,13 +68,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   title: {
-  fontSize: 40,
-  fontWeight: "900",
-  color: "#f42525",
-  letterSpacing: 2,
-  textTransform: "uppercase",
-  marginBottom: 8,
-},
+    fontSize: 40,
+    fontWeight: "900",
+    color: "#f42525",
+    letterSpacing: 2,
+    textTransform: "uppercase",
+    marginBottom: 8,
+  },
   subtitle: {
     fontSize: 25,
     color: "#f42525",
