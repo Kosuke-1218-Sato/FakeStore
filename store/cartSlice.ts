@@ -11,6 +11,14 @@ const cartSlice = createSlice({
   initialState,
 
   reducers: {
+  // Restore cart from local storage
+  setCart: (state, action) => {
+    state.items = action.payload;
+  },
+    // Clear all items in cart after checkout
+    clearCart: (state) => {
+    state.items = [];
+    },
 
     // Add product to shopping cart
     addToCart: (state, action) => {
@@ -65,6 +73,8 @@ export const {
   addToCart,
   increaseQty,
   decreaseQty,
+  setCart,
+  clearCart,
 } = cartSlice.actions;
 
 // Export Redux reducer

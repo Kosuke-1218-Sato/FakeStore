@@ -2,20 +2,32 @@ import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSelector } from "react-redux";
 
 export default function CategoryScreen() {
-  // Store category data fetched from Fake Store API
+  // Get logged-in user from Redux
+  const user = useSelector((state: any) => state.auth.user);
+
+  // Store product categories fetched from API
   const [categories, setCategories] = useState<any[]>([]);
 
   // Manage loading state while fetching data
   const [loading, setLoading] = useState(true);
 
   const router = useRouter();
+
+  // Block access if the user is not logged in
+  useEffect(() => {
+    if (!user) {
+      Alert.alert("Login required", "Please sign in first.");
+    }
+  }, [user]);
 
   // Fetch product categories when the screen loads
   useEffect(() => {
@@ -26,7 +38,19 @@ export default function CategoryScreen() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Show loading indicator while data is being fetched
+  // Show login required message for unauthenticated users
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Login required</Text>
+        <Text style={styles.subtitle}>
+          Please sign in from the User Profile tab.
+        </Text>
+      </View>
+    );
+  }
+
+  // Show loading indicator while fetching categories
   if (loading) {
     return (
       <View style={styles.container}>
@@ -35,12 +59,12 @@ export default function CategoryScreen() {
     );
   }
 
+  // Display category buttons and navigate to product list
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Fake Store</Text>
       <Text style={styles.subtitle}>Choose a category</Text>
 
-      {/* Display category buttons */}
       {categories.map((item, index) => (
         <TouchableOpacity
           key={index}
@@ -58,7 +82,6 @@ export default function CategoryScreen() {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
