@@ -9,10 +9,10 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
-
 import { Ionicons } from "@expo/vector-icons";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { addToCart } from "../../store/cartSlice";
+import { apiRequest } from "../../API/api";
 
 export default function ProductDetailScreen() {
   const router = useRouter();
@@ -20,16 +20,20 @@ export default function ProductDetailScreen() {
   // Get product id and category from route parameters
   const { id, category } = useLocalSearchParams();
 
-  // Redux dispatch function for adding item to cart
+  // Redux dispatch
   const dispatch = useDispatch();
 
-  // Store selected product detail
+  // Get user and cart items from Redux
+  const user = useSelector((state: any) => state.auth.user);
+  const items = useSelector((state: any) => state.cart.items);
+
+  // Store selected product
   const [product, setProduct] = useState<any>(null);
 
-  // Manage loading state while fetching product detail
+  // Loading state
   const [loading, setLoading] = useState(true);
 
-  // Fetch product detail when product id changes
+  // Fetch product detail
   useEffect(() => {
     if (!id) return;
 
@@ -42,7 +46,7 @@ export default function ProductDetailScreen() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  // Show loading indicator while product detail is being fetched
+  // Loading UI
   if (loading || !product) {
     return (
       <View style={styles.container}>
@@ -53,7 +57,7 @@ export default function ProductDetailScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      {/* Back to selected category product list */}
+      {/* Back button */}
       <TouchableOpacity
         style={styles.backButton}
         onPress={() =>
@@ -69,25 +73,59 @@ export default function ProductDetailScreen() {
       {/* Product image */}
       <Image source={{ uri: product.image }} style={styles.image} />
 
-      {/* Product information */}
+      {/* Product info */}
       <Text style={styles.title}>{product.title}</Text>
       <Text style={styles.price}>${product.price}</Text>
 
-      {/* Product description card */}
+      {/* Description */}
       <View style={styles.descriptionBox}>
         <Text style={styles.description}>
           {product.description}
         </Text>
       </View>
 
-      {/* Add product to Redux shopping cart */}
+      {/* Add to cart button */}
       <TouchableOpacity
         style={styles.cartButton}
-        onPress={() => dispatch(addToCart(product))}
+        onPress={async () => {
+          // Check if product already exists in cart
+          const existingItem = items.find(
+            (i: any) => i.id === product.id
+          );
+
+          // Prepare updated cart data
+          const nextItems = existingItem
+            ? items.map((i: any) =>
+                i.id === product.id
+                  ? { ...i, quantity: i.quantity + 1 }
+                  : i
+              )
+            : [...items, { ...product, quantity: 1 }];
+
+          // Update Redux cart
+          dispatch(addToCart(product));
+
+          try {
+            // Save cart to backend
+            await apiRequest(
+              "/cart",
+              "PUT",
+              {
+                items: nextItems.map((item: any) => ({
+                  id: item.id,
+                  price: item.price,
+                  count: item.quantity,
+                })),
+              } as any,
+              user.token
+            );
+          } catch (e: any) {
+            console.log(e.message);
+          }
+        }}
       >
         <View style={styles.cartButtonContent}>
           <Ionicons name="cart" size={20} color="black" />
-
           <Text style={styles.cartButtonText}>
             Add to Shopping Cart
           </Text>
@@ -100,7 +138,7 @@ export default function ProductDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#aaecf3",
+    backgroundColor: "#422ec6",
     padding: 20,
   },
   backButton: {
@@ -125,7 +163,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#111111",
+    color: "#34e50c",
     marginBottom: 10,
   },
   price: {

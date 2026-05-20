@@ -1,6 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-
 import {
   Image,
   ScrollView,
@@ -12,7 +11,6 @@ import {
 } from "react-native";
 
 export default function ProductListScreen() {
-
   const router = useRouter();
 
   // Get selected category from route parameters
@@ -52,18 +50,18 @@ export default function ProductListScreen() {
   return (
     <ScrollView style={styles.container}>
 
-      {/* Display selected category title */}
+      {/* Display selected category */}
       <Text style={styles.header}>{category}</Text>
 
-      {/* Back button to return to home screen */}
+      {/* Back button */}
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() => router.push("/")}
+        onPress={() => router.back()} // ← 修正ポイント
       >
         <Text style={styles.backText}>← Back</Text>
       </TouchableOpacity>
 
-      {/* Display product cards */}
+      {/* Product list */}
       {products.map((item: any) => (
         <TouchableOpacity
           key={item.id}
@@ -71,7 +69,7 @@ export default function ProductListScreen() {
             router.push({
               pathname: "/productDetail",
 
-              // Pass product id and category to detail screen
+              // Pass product id and category
               params: {
                 id: item.id,
                 category: category,
@@ -110,7 +108,7 @@ export default function ProductListScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#aaecf3",
+    backgroundColor: "#422ec6",
     padding: 20,
   },
 
@@ -147,7 +145,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textTransform: "capitalize",
     marginBottom: 12,
-    color: "#111111",
+    color: "#ffffff",
   },
 
   backButton: {
@@ -168,12 +166,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#aaecf3",
+    backgroundColor: "#422ec6",
   },
 
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: "#111111",
+    color: "#ffffff",
   },
 });

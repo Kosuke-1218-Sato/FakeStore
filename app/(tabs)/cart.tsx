@@ -16,8 +16,7 @@ import { apiRequest } from "../../API/api";
 import { useRouter } from "expo-router";
 
 export default function CartScreen() {
-
-  // Get logged-in user from Redux
+  // Get logged-in user
   const user = useSelector((state: any) => state.auth.user);
 
   // Get cart items from Redux
@@ -26,30 +25,32 @@ export default function CartScreen() {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  // Check if user is logged in
+  // Alert if user is not logged in
   useEffect(() => {
     if (!user) {
       Alert.alert("Login required", "Please sign in first.");
     }
   }, [user]);
 
-  // If not logged in, block access
+  // Block screen if not logged in
   if (!user) {
     return (
       <View style={styles.container}>
         <Text style={styles.title}>Login required</Text>
-        <Text>Please sign in from the User Profile tab.</Text>
+        <Text style={{ color: "white", fontSize: 18 }}>
+          Please sign in from the User Profile tab.
+        </Text>
       </View>
     );
   }
 
-  // Calculate total quantity of items
+  // Calculate total items
   const totalItems = items.reduce(
     (sum: number, item: any) => sum + item.quantity,
     0
   );
 
-  // Calculate total price of cart
+  // Calculate total price
   const totalPrice = items.reduce(
     (sum: number, item: any) => sum + item.price * item.quantity,
     0
@@ -59,14 +60,14 @@ export default function CartScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Shopping Cart</Text>
 
-      {/* If cart is empty */}
+      {/* Empty cart */}
       {items.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>Your shopping cart is empty!</Text>
         </View>
       ) : (
         <>
-          {/* Cart summary section */}
+          {/* Cart summary */}
           <View style={styles.summaryBox}>
             <View style={{ flex: 1 }}>
               <Text style={styles.summaryText}>
@@ -83,28 +84,27 @@ export default function CartScreen() {
               style={styles.checkoutButton}
               onPress={async () => {
                 try {
-                  // Send cart items to backend to create a new order
+                  // Send cart to backend to create order
                   await apiRequest(
                     "/orders/neworder",
                     "POST",
                     {
                       items: items.map((item: any) => ({
-                        prodID: item.id,      // Product ID required by API
-                        price: item.price,   // Price required by API
-                        quantity: item.quantity, // Quantity required by API
+                        prodID: item.id,
+                        price: item.price,
+                        quantity: item.quantity,
                       })),
                     } as any,
-                    user.token // Authentication token
+                    user.token
                   );
 
-                  // Show success message
                   Alert.alert("Success", "Order created!");
 
+                  // Clear cart after checkout
                   dispatch(clearCart());
 
-                  // Navigate to Orders screen to view new order
+                  // Navigate to orders screen
                   router.push("/orders");
-
                 } catch (e: any) {
                   Alert.alert("Error", e.message);
                 }
@@ -117,7 +117,7 @@ export default function CartScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Render cart items */}
+          {/* Cart item list */}
           <FlatList
             data={items}
             keyExtractor={(item: any) => item.id.toString()}
@@ -129,7 +129,7 @@ export default function CartScreen() {
                   <Text style={styles.itemTitle}>{item.title}</Text>
                   <Text style={styles.itemPrice}>${item.price}</Text>
 
-                  {/* Quantity control buttons */}
+                  {/* Quantity controls */}
                   <View style={styles.buttonRow}>
                     <TouchableOpacity
                       style={styles.qtyButton}
@@ -162,13 +162,13 @@ export default function CartScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#aaecf3",
+    backgroundColor: "#422ec6",
     padding: 20,
   },
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#111111",
+    color: "#34e50c",
     marginBottom: 20,
   },
   image: {
@@ -263,6 +263,6 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 30,
     fontWeight: "600",
-    color: "#f12c2c",
+    color: "#34e50c",
   },
 });

@@ -1,16 +1,23 @@
 import { useState } from "react";
-import { View, Text, TextInput, Button, Alert, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  Alert,
+  TouchableOpacity,
+  Modal,
+} from "react-native";
 import { apiRequest } from "../../API/api";
 import { useDispatch, useSelector } from "react-redux";
 import { setUser, logout } from "../../store/authSlice";
-import { Modal } from "react-native";
-import { clearCart } from "../../store/cartSlice";
-import { clearOrders } from "../../store/ordersSlice";
+import { clearCart, setCart } from "../../store/cartSlice";
+import { clearOrders, setOrders } from "../../store/ordersSlice";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function ProfileScreen() {
   const dispatch = useDispatch();
 
-  // Get current logged-in user from Redux
+  // Get current logged-in user
   const user = useSelector((state: any) => state.auth.user);
 
   // Form states for login / signup
@@ -19,7 +26,7 @@ export default function ProfileScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // Modal state for updating profile
+  // Modal states for updating profile
   const [modalVisible, setModalVisible] = useState(false);
   const [newName, setNewName] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -34,15 +41,47 @@ export default function ProfileScreen() {
   // Handle user login
   const handleLogin = async () => {
     try {
-      const data = await apiRequest("/users/signin", "POST", {
+      const data: any = await apiRequest("/users/signin", "POST", {
         email,
         password,
       } as any);
 
-      console.log("LOGIN DATA:", data);
-
-      // Save user data (including token) into Redux
+      // Save user to Redux
       dispatch(setUser(data));
+
+      // Restore user cart from backend
+      const cartData: any = await apiRequest(
+        "/cart",
+        "GET",
+        null,
+        data.token
+      );
+
+      const restoredItems: any[] = await Promise.all(
+        cartData.items.map(async (i: any) => {
+          const res = await fetch(
+            `https://fakestoreapi.com/products/${i.id}`
+          );
+          const product = await res.json();
+
+          return {
+            ...product,
+            quantity: i.count,
+          };
+        })
+      );
+
+      dispatch(setCart(restoredItems));
+
+      // Restore user orders from backend
+      const ordersData: any = await apiRequest(
+        "/orders/all",
+        "GET",
+        null,
+        data.token
+      );
+
+      dispatch(setOrders(ordersData.orders || []));
 
       Alert.alert("Success", "Logged in!");
     } catch (e: any) {
@@ -68,153 +107,342 @@ export default function ProfileScreen() {
     }
   };
 
-  // If user is logged in → show profile screen
+  // Logged-in user UI
   if (user) {
     return (
-      <View style={{ padding: 20 }}>
-        <Text style={{ fontSize: 24, marginBottom: 20 }}>
+      <View
+        style={{
+          flex: 1,
+          padding: 20,
+          backgroundColor: "#422ec6",
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 28,
+            fontWeight: "bold",
+            color: "#34e50c",
+            marginBottom: 20,
+          }}
+        >
           User Profile
         </Text>
 
-        {/* Display user information */}
-        <Text>User Name: {user.name}</Text>
-        <Text>Email: {user.email}</Text>
+        <View
+          style={{
+            backgroundColor: "white",
+            borderRadius: 16,
+            padding: 20,
+          }}
+        >
+          <Text style={{ fontSize: 20, marginBottom: 10 }}>
+            User Name: {user.name}
+          </Text>
 
-        {/* Open update modal */}
-        <View style={{ marginTop: 20 }}>
-          <Button title="Update" onPress={() => setModalVisible(true)} />
-        </View>
+          <Text style={{ fontSize: 20 }}>
+            Email: {user.email}
+          </Text>
 
-        {/* Logout user */}
-        <View style={{ marginTop: 10 }}>
-          <Button
-            title="Sign Out"
+          {/* Update button */}
+          <TouchableOpacity
+            style={{
+              backgroundColor: "#ffffff",
+              padding: 10,
+              borderRadius: 10,
+              flexDirection: "row",
+              justifyContent: "center",
+              alignItems: "center",
+              marginTop: 10,
+            }}
+            onPress={() => setModalVisible(true)}
+          >
+            <Ionicons name="create" size={20} color="#422ec6" />
+            <Text style={{ marginLeft: 8, fontWeight: "bold" }}>
+              Update
+            </Text>
+          </TouchableOpacity>
+
+          {/* Sign out button */}
+          <TouchableOpacity
+            style={{
+              backgroundColor: "#ffffff",
+              padding: 1,
+              borderRadius: 10,
+              flexDirection: "row",
+              justifyContent: "center",
+              alignItems: "center",
+              marginTop: 10,
+            }}
             onPress={() => {
               dispatch(clearCart());
               dispatch(clearOrders());
               dispatch(logout());
-          }}
-        />
+            }}
+          >
+            <Ionicons name="log-out" size={20} color="#422ec6" />
+            <Text style={{ marginLeft: 8, fontWeight: "bold" }}>
+              Sign Out
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Modal for updating user profile */}
+        {/* Update profile modal */}
         <Modal visible={modalVisible} animationType="slide">
-          <View style={{ padding: 20 }}>
-            <Text style={{ fontSize: 24, marginBottom: 20 }}>
-              Update Profile
-            </Text>
-
-            <Text>Name</Text>
-            <TextInput
-              style={{ borderWidth: 1, marginBottom: 10, padding: 8 }}
-              value={newName}
-              onChangeText={setNewName}
-            />
-
-            <Text>Password</Text>
-            <TextInput
-              style={{ borderWidth: 1, marginBottom: 20, padding: 8 }}
-              secureTextEntry
-              value={newPassword}
-              onChangeText={setNewPassword}
-            />
-
-            {/* Save updated user data */}
-            <Button
-              title="Save"
-              onPress={async () => {
-                try {
-                  const data = await apiRequest(
-                    "/users/update",
-                    "POST",
-                    {
-                      name: newName,
-                      password: newPassword,
-                    } as any,
-                    user.token
-                  );
-
-                  // Update Redux state with new user info
-                  dispatch(setUser(data));
-
-                  setModalVisible(false);
-                  Alert.alert("Updated!");
-                } catch (e: any) {
-                  Alert.alert("Error", e.message);
-                }
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "#422ec6",
+              padding: 20,
+              justifyContent: "center",
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: "white",
+                borderRadius: 16,
+                padding: 20,
               }}
-            />
+            >
+              <Text
+                style={{
+                  fontSize: 24,
+                  fontWeight: "bold",
+                  marginBottom: 20,
+                }}
+              >
+                Update User Profile
+              </Text>
 
-            {/* Close modal */}
-            <Button
-              title="Cancel"
-              onPress={() => setModalVisible(false)}
-            />
+              <Text>Name</Text>
+              <TextInput
+                style={{
+                  borderWidth: 1,
+                  marginBottom: 10,
+                  padding: 10,
+                  borderRadius: 8,
+                }}
+                value={newName}
+                onChangeText={setNewName}
+              />
+
+              <Text>Password</Text>
+              <TextInput
+                style={{
+                  borderWidth: 1,
+                  marginBottom: 20,
+                  padding: 10,
+                  borderRadius: 8,
+                }}
+                secureTextEntry
+                value={newPassword}
+                onChangeText={setNewPassword}
+              />
+
+              {/* Confirm update */}
+              <TouchableOpacity
+                style={{
+                  backgroundColor: "#422ec6",
+                  padding: 12,
+                  borderRadius: 10,
+                  flexDirection: "row",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+                onPress={async () => {
+                  if (!newName || !newPassword) {
+                    Alert.alert("Error", "Please fill all fields");
+                    return;
+                  }
+
+                  try {
+                    const data: any = await apiRequest(
+                      "/users/update",
+                      "POST",
+                      {
+                        name: newName,
+                        password: newPassword,
+                      } as any,
+                      user.token
+                    );
+
+                    dispatch(setUser(data));
+                    setModalVisible(false);
+                    Alert.alert("Success", "Profile updated!");
+                  } catch (e: any) {
+                    Alert.alert("Error", e.message);
+                  }
+                }}
+              >
+                <Ionicons
+                  name="checkmark-circle"
+                  size={20}
+                  color="white"
+                />
+                <Text
+                  style={{
+                    marginLeft: 8,
+                    color: "white",
+                    fontWeight: "bold",
+                  }}
+                >
+                  Confirm
+                </Text>
+              </TouchableOpacity>
+
+              {/* Cancel update */}
+              <TouchableOpacity
+                style={{
+                  backgroundColor: "#cccccc",
+                  padding: 12,
+                  borderRadius: 10,
+                  flexDirection: "row",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  marginTop: 10,
+                }}
+                onPress={() => setModalVisible(false)}
+              >
+                <Ionicons name="close-circle" size={20} color="#333" />
+                <Text style={{ marginLeft: 8, fontWeight: "bold" }}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </Modal>
       </View>
     );
   }
 
-  // If user is NOT logged in → show login/signup form
+  // Login / Sign Up UI
   return (
-    <View style={{ padding: 20 }}>
-      <Text style={{ fontSize: 24, marginBottom: 20 }}>
+    <View
+      style={{
+        flex: 1,
+        padding: 20,
+        backgroundColor: "#422ec6",
+      }}
+    >
+      <Text style={{ fontSize: 24, marginBottom: 20, color: "white" }}>
         {isSignUp
           ? "Sign up a new user"
           : "Sign in with your email and password"}
       </Text>
 
-      {/* Name input only for Sign Up */}
-      {isSignUp && (
-        <>
-          <Text>Name</Text>
-          <TextInput
-            style={{ borderWidth: 1, marginBottom: 10, padding: 8 }}
-            value={name}
-            onChangeText={setName}
-          />
-        </>
-      )}
-
-      <Text>Email</Text>
-      <TextInput
-        style={{ borderWidth: 1, marginBottom: 10, padding: 8 }}
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-      />
-
-      <Text>Password</Text>
-      <TextInput
-        style={{ borderWidth: 1, marginBottom: 20, padding: 8 }}
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-
-      {/* Clear all inputs */}
-      <Button title="Clear" onPress={clearForm} />
-
-      {/* Submit button */}
-      <View style={{ marginTop: 10 }}>
-        <Button
-          title={isSignUp ? "Sign Up" : "Sign In"}
-          onPress={isSignUp ? handleRegister : handleLogin}
-        />
-      </View>
-
-      {/* Toggle between Sign In and Sign Up */}
-      <TouchableOpacity
-        style={{ marginTop: 20 }}
-        onPress={() => setIsSignUp(!isSignUp)}
+      <View
+        style={{
+          backgroundColor: "white",
+          borderRadius: 16,
+          padding: 20,
+        }}
       >
-        <Text>
-          {isSignUp
-            ? "Switch to: sign in with an existing user"
-            : "Switch to: sign up a new user"}
-        </Text>
-      </TouchableOpacity>
+        {isSignUp && (
+          <>
+            <Text>Name</Text>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                marginBottom: 10,
+                padding: 10,
+                borderRadius: 8,
+              }}
+              value={name}
+              onChangeText={setName}
+            />
+          </>
+        )}
+
+        <Text>Email</Text>
+        <TextInput
+          style={{
+            borderWidth: 1,
+            marginBottom: 10,
+            padding: 10,
+            borderRadius: 8,
+          }}
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+        />
+
+        <Text>Password</Text>
+        <TextInput
+          style={{
+            borderWidth: 1,
+            marginBottom: 20,
+            padding: 10,
+            borderRadius: 8,
+          }}
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
+
+        {/* Clear form */}
+        <TouchableOpacity
+          style={{
+            backgroundColor: "#cccccc",
+            padding: 12,
+            borderRadius: 10,
+            flexDirection: "row",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          onPress={clearForm}
+        >
+          <Ionicons name="refresh" size={20} color="#333" />
+          <Text style={{ marginLeft: 8, fontWeight: "bold" }}>
+            Clear
+          </Text>
+        </TouchableOpacity>
+
+        {/* Login / Register button */}
+        <TouchableOpacity
+          style={{
+            backgroundColor: "#422ec6",
+            padding: 12,
+            borderRadius: 10,
+            flexDirection: "row",
+            justifyContent: "center",
+            alignItems: "center",
+            marginTop: 10,
+          }}
+          onPress={isSignUp ? handleRegister : handleLogin}
+        >
+          <Ionicons
+            name={isSignUp ? "person-add" : "log-in"}
+            size={20}
+            color="white"
+          />
+          <Text
+            style={{
+              marginLeft: 8,
+              color: "white",
+              fontWeight: "bold",
+            }}
+          >
+            {isSignUp ? "Sign Up" : "Sign In"}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Toggle login/signup */}
+        <TouchableOpacity
+          style={{ marginTop: 20 }}
+          onPress={() => setIsSignUp(!isSignUp)}
+        >
+          <Text
+            style={{
+              textAlign: "center",
+              color: "#422ec6",
+              fontSize: 18,
+            }}
+          >
+            {isSignUp
+              ? "Switch to: sign in with an existing user"
+              : "Switch to: sign up a new user"}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }

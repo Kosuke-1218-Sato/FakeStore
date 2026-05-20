@@ -2,7 +2,6 @@ import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -22,13 +21,6 @@ export default function CategoryScreen() {
 
   const router = useRouter();
 
-  // Block access if the user is not logged in
-  useEffect(() => {
-    if (!user) {
-      Alert.alert("Login required", "Please sign in first.");
-    }
-  }, [user]);
-
   // Fetch product categories when the screen loads
   useEffect(() => {
     fetch("https://fakestoreapi.com/products/categories")
@@ -38,7 +30,7 @@ export default function CategoryScreen() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Show login required message for unauthenticated users
+  // Show login required message if user somehow reaches this screen directly
   if (!user) {
     return (
       <View style={styles.container}>
@@ -82,26 +74,27 @@ export default function CategoryScreen() {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#aaecf3",
+    backgroundColor: "#422ec6",
     padding: 24,
     justifyContent: "center",
     alignItems: "center",
   },
   title: {
-    fontSize: 40,
+    fontSize: 50,
     fontWeight: "900",
-    color: "#f42525",
+    color: "#34e50c",
     letterSpacing: 2,
     textTransform: "uppercase",
-    marginBottom: 8,
+    marginBottom: 20,
   },
   subtitle: {
-    fontSize: 25,
-    color: "#f42525",
-    marginBottom: 32,
+    fontSize: 30,
+    color: "#ffffff",
+    marginBottom: 70,
   },
   button: {
     backgroundColor: "#f2f2f2",

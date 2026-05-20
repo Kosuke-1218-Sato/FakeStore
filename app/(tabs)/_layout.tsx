@@ -1,20 +1,36 @@
 import { Tabs } from "expo-router";
 import { useSelector } from "react-redux";
 import { Ionicons } from "@expo/vector-icons";
+import { Alert } from "react-native";
 
 export default function TabLayout() {
-  // Get shopping cart items from Redux store
+  // Get login state from Redux
+  const user = useSelector((state: any) => state.auth.user);
+
+  // Get cart items for cart badge
   const items = useSelector((state: any) => state.cart.items);
 
-  // Calculate total quantity for cart badge notification
+  // Calculate total cart quantity
   const totalQty = items.reduce(
     (sum: number, item: any) => sum + item.quantity,
     0
   );
+
+  // Get orders for new order badge
   const orders = useSelector((state: any) => state.orders?.orders || []);
+
+  // Count unpaid orders
   const newOrdersCount = orders.filter(
-  (o: any) => o.is_paid === 0
-).length;
+    (o: any) => o.is_paid === 0
+  ).length;
+
+  // Block protected tabs when user is not logged in
+  const requireLogin = (e: any) => {
+    if (!user) {
+      e.preventDefault();
+      Alert.alert("Login required", "Please sign in first");
+    }
+  };
 
   return (
     <Tabs>
@@ -26,6 +42,9 @@ export default function TabLayout() {
             <Ionicons name="home" size={size} color={color} />
           ),
         }}
+        listeners={{
+          tabPress: requireLogin,
+        }}
       />
 
       <Tabs.Screen
@@ -35,7 +54,10 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="cart" size={size} color={color} />
           ),
-          tabBarBadge: totalQty > 0 ? totalQty : undefined,
+          tabBarBadge: user && totalQty > 0 ? totalQty : undefined,
+        }}
+        listeners={{
+          tabPress: requireLogin,
         }}
       />
 
@@ -46,7 +68,11 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="list" size={size} color={color} />
           ),
-          tabBarBadge: newOrdersCount > 0 ? newOrdersCount : undefined,
+          tabBarBadge:
+            user && newOrdersCount > 0 ? newOrdersCount : undefined,
+        }}
+        listeners={{
+          tabPress: requireLogin,
         }}
       />
 
@@ -60,6 +86,7 @@ export default function TabLayout() {
         }}
       />
 
+      {/* Hidden screens used for navigation */}
       <Tabs.Screen name="product" options={{ href: null }} />
       <Tabs.Screen name="productDetail" options={{ href: null }} />
     </Tabs>
