@@ -151,7 +151,7 @@ export default function OrdersScreen() {
           >
             <Text>Order ID: {item.id}</Text>
             <Text>Items: {item.item_numbers}</Text>
-            <Text>Total: ${item.total_price}</Text>
+            <Text>Total: ${(item.total_price / 100).toFixed(2)}</Text>
 
             <Ionicons
               name={expandedId === item.id ? "chevron-up" : "chevron-down"}
