@@ -1,44 +1,44 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import {
-  View,
+  Alert,
+  Modal,
   Text,
   TextInput,
-  Alert,
   TouchableOpacity,
-  Modal,
+  View,
 } from "react-native";
-import { apiRequest } from "../../API/api";
 import { useDispatch, useSelector } from "react-redux";
-import { setUser, logout } from "../../store/authSlice";
+import { apiRequest } from "../../API/api";
+import { logout, setUser } from "../../store/authSlice";
 import { clearCart, setCart } from "../../store/cartSlice";
 import { clearOrders, setOrders } from "../../store/ordersSlice";
-import { Ionicons } from "@expo/vector-icons";
 
 export default function ProfileScreen() {
   const dispatch = useDispatch();
 
-  // Get current logged-in user
+  // Get current user
   const user = useSelector((state: any) => state.auth.user);
 
-  // Form states for login / signup
+  // Form states
   const [isSignUp, setIsSignUp] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // Modal states for updating profile
+  // Modal states
   const [modalVisible, setModalVisible] = useState(false);
   const [newName, setNewName] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
-  // Clear form inputs
+  // Clear form
   const clearForm = () => {
     setName("");
     setEmail("");
     setPassword("");
   };
 
-  // Handle user login
+  // Handle login
   const handleLogin = async () => {
     try {
       const data: any = await apiRequest("/users/signin", "POST", {
@@ -46,10 +46,10 @@ export default function ProfileScreen() {
         password,
       } as any);
 
-      // Save user to Redux
+      // Save user
       dispatch(setUser(data));
 
-      // Restore user cart from backend
+      // Restore cart
       const cartData: any = await apiRequest(
         "/cart",
         "GET",
@@ -73,7 +73,7 @@ export default function ProfileScreen() {
 
       dispatch(setCart(restoredItems));
 
-      // Restore user orders from backend
+      // Restore orders
       const ordersData: any = await apiRequest(
         "/orders/all",
         "GET",
@@ -89,7 +89,7 @@ export default function ProfileScreen() {
     }
   };
 
-  // Handle new user registration
+  // Handle register
   const handleRegister = async () => {
     try {
       const data = await apiRequest("/users/signup", "POST", {
@@ -98,7 +98,6 @@ export default function ProfileScreen() {
         password,
       } as any);
 
-      // Automatically log in after registration
       dispatch(setUser(data));
 
       Alert.alert("Success", "User created and logged in!");
@@ -107,34 +106,15 @@ export default function ProfileScreen() {
     }
   };
 
-  // Logged-in user UI
+  // Logged in UI
   if (user) {
     return (
-      <View
-        style={{
-          flex: 1,
-          padding: 20,
-          backgroundColor: "#422ec6",
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 28,
-            fontWeight: "bold",
-            color: "#34e50c",
-            marginBottom: 20,
-          }}
-        >
+      <View style={{ flex: 1, padding: 20, backgroundColor: "#422ec6" }}>
+        <Text style={{ fontSize: 28, fontWeight: "bold", color: "#34e50c", marginBottom: 20 }}>
           User Profile
         </Text>
 
-        <View
-          style={{
-            backgroundColor: "white",
-            borderRadius: 16,
-            padding: 20,
-          }}
-        >
+        <View style={{ backgroundColor: "white", borderRadius: 16, padding: 20 }}>
           <Text style={{ fontSize: 20, marginBottom: 10 }}>
             User Name: {user.name}
           </Text>
@@ -143,7 +123,7 @@ export default function ProfileScreen() {
             Email: {user.email}
           </Text>
 
-          {/* Update button */}
+          {/* Update */}
           <TouchableOpacity
             style={{
               backgroundColor: "#ffffff",
@@ -162,11 +142,11 @@ export default function ProfileScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Sign out button */}
+          {/* Logout */}
           <TouchableOpacity
             style={{
               backgroundColor: "#ffffff",
-              padding: 1,
+              padding: 10,
               borderRadius: 10,
               flexDirection: "row",
               justifyContent: "center",
@@ -186,59 +166,30 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Update profile modal */}
+        {/* Modal */}
         <Modal visible={modalVisible} animationType="slide">
-          <View
-            style={{
-              flex: 1,
-              backgroundColor: "#422ec6",
-              padding: 20,
-              justifyContent: "center",
-            }}
-          >
-            <View
-              style={{
-                backgroundColor: "white",
-                borderRadius: 16,
-                padding: 20,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 24,
-                  fontWeight: "bold",
-                  marginBottom: 20,
-                }}
-              >
+          <View style={{ flex: 1, backgroundColor: "#422ec6", padding: 20, justifyContent: "center" }}>
+            <View style={{ backgroundColor: "white", borderRadius: 16, padding: 20 }}>
+              <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 20 }}>
                 Update User Profile
               </Text>
 
               <Text>Name</Text>
               <TextInput
-                style={{
-                  borderWidth: 1,
-                  marginBottom: 10,
-                  padding: 10,
-                  borderRadius: 8,
-                }}
+                style={{ borderWidth: 1, marginBottom: 10, padding: 10, borderRadius: 8 }}
                 value={newName}
                 onChangeText={setNewName}
               />
 
               <Text>Password</Text>
               <TextInput
-                style={{
-                  borderWidth: 1,
-                  marginBottom: 20,
-                  padding: 10,
-                  borderRadius: 8,
-                }}
+                style={{ borderWidth: 1, marginBottom: 20, padding: 10, borderRadius: 8 }}
                 secureTextEntry
                 value={newPassword}
                 onChangeText={setNewPassword}
               />
 
-              {/* Confirm update */}
+              {/* Confirm */}
               <TouchableOpacity
                 style={{
                   backgroundColor: "#422ec6",
@@ -265,7 +216,15 @@ export default function ProfileScreen() {
                       user.token
                     );
 
-                    dispatch(setUser(data));
+                    // Keep token
+                    dispatch(
+                      setUser({
+                        ...user,
+                        ...data,
+                        token: user.token,
+                      })
+                    );
+
                     setModalVisible(false);
                     Alert.alert("Success", "Profile updated!");
                   } catch (e: any) {
@@ -273,23 +232,13 @@ export default function ProfileScreen() {
                   }
                 }}
               >
-                <Ionicons
-                  name="checkmark-circle"
-                  size={20}
-                  color="white"
-                />
-                <Text
-                  style={{
-                    marginLeft: 8,
-                    color: "white",
-                    fontWeight: "bold",
-                  }}
-                >
+                <Ionicons name="checkmark-circle" size={20} color="white" />
+                <Text style={{ marginLeft: 8, color: "white", fontWeight: "bold" }}>
                   Confirm
                 </Text>
               </TouchableOpacity>
 
-              {/* Cancel update */}
+              {/* Cancel */}
               <TouchableOpacity
                 style={{
                   backgroundColor: "#cccccc",
@@ -314,38 +263,21 @@ export default function ProfileScreen() {
     );
   }
 
-  // Login / Sign Up UI
+  // Login UI
   return (
-    <View
-      style={{
-        flex: 1,
-        padding: 20,
-        backgroundColor: "#422ec6",
-      }}
-    >
+    <View style={{ flex: 1, padding: 20, backgroundColor: "#422ec6" }}>
       <Text style={{ fontSize: 24, marginBottom: 20, color: "white" }}>
         {isSignUp
           ? "Sign up a new user"
           : "Sign in with your email and password"}
       </Text>
 
-      <View
-        style={{
-          backgroundColor: "white",
-          borderRadius: 16,
-          padding: 20,
-        }}
-      >
+      <View style={{ backgroundColor: "white", borderRadius: 16, padding: 20 }}>
         {isSignUp && (
           <>
             <Text>Name</Text>
             <TextInput
-              style={{
-                borderWidth: 1,
-                marginBottom: 10,
-                padding: 10,
-                borderRadius: 8,
-              }}
+              style={{ borderWidth: 1, marginBottom: 10, padding: 10, borderRadius: 8 }}
               value={name}
               onChangeText={setName}
             />
@@ -354,31 +286,19 @@ export default function ProfileScreen() {
 
         <Text>Email</Text>
         <TextInput
-          style={{
-            borderWidth: 1,
-            marginBottom: 10,
-            padding: 10,
-            borderRadius: 8,
-          }}
+          style={{ borderWidth: 1, marginBottom: 10, padding: 10, borderRadius: 8 }}
           value={email}
           onChangeText={setEmail}
-          autoCapitalize="none"
         />
 
         <Text>Password</Text>
         <TextInput
-          style={{
-            borderWidth: 1,
-            marginBottom: 20,
-            padding: 10,
-            borderRadius: 8,
-          }}
+          style={{ borderWidth: 1, marginBottom: 20, padding: 10, borderRadius: 8 }}
           secureTextEntry
           value={password}
           onChangeText={setPassword}
         />
 
-        {/* Clear form */}
         <TouchableOpacity
           style={{
             backgroundColor: "#cccccc",
@@ -386,60 +306,35 @@ export default function ProfileScreen() {
             borderRadius: 10,
             flexDirection: "row",
             justifyContent: "center",
-            alignItems: "center",
           }}
           onPress={clearForm}
         >
-          <Ionicons name="refresh" size={20} color="#333" />
-          <Text style={{ marginLeft: 8, fontWeight: "bold" }}>
-            Clear
-          </Text>
+          <Text>Clear</Text>
         </TouchableOpacity>
 
-        {/* Login / Register button */}
         <TouchableOpacity
           style={{
             backgroundColor: "#422ec6",
             padding: 12,
             borderRadius: 10,
-            flexDirection: "row",
-            justifyContent: "center",
-            alignItems: "center",
             marginTop: 10,
+            alignItems: "center",
           }}
           onPress={isSignUp ? handleRegister : handleLogin}
         >
-          <Ionicons
-            name={isSignUp ? "person-add" : "log-in"}
-            size={20}
-            color="white"
-          />
-          <Text
-            style={{
-              marginLeft: 8,
-              color: "white",
-              fontWeight: "bold",
-            }}
-          >
+          <Text style={{ color: "white", fontWeight: "bold" }}>
             {isSignUp ? "Sign Up" : "Sign In"}
           </Text>
         </TouchableOpacity>
 
-        {/* Toggle login/signup */}
         <TouchableOpacity
           style={{ marginTop: 20 }}
           onPress={() => setIsSignUp(!isSignUp)}
         >
-          <Text
-            style={{
-              textAlign: "center",
-              color: "#422ec6",
-              fontSize: 18,
-            }}
-          >
+          <Text style={{ textAlign: "center", color: "#422ec6" }}>
             {isSignUp
-              ? "Switch to: sign in with an existing user"
-              : "Switch to: sign up a new user"}
+              ? "Switch to sign in"
+              : "Switch to sign up"}
           </Text>
         </TouchableOpacity>
       </View>
